@@ -12,8 +12,8 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm ci --no-audit --no-fund
+# Install dependencies (use install instead of ci for better compatibility)
+RUN npm install --no-audit --no-fund --legacy-peer-deps
 
 # Copy source code
 COPY . .

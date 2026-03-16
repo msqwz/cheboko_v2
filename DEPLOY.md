@@ -145,4 +145,3 @@ cheboko_v2/
 | `502 Bad Gateway` | `docker compose logs backend` — проверьте подключение к БД |
 | Белый экран | `docker compose logs frontend` — проверьте сборку |
 | Порт 80 занят | `systemctl stop apache2` или `nginx` — остановите конфликтующий сервис |
-| БД не запускается | Проверьте `POSTGRES_PASSWORD` в `.env` |
