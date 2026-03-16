@@ -1,0 +1,5 @@
+{
+  "name": "Cheboko Service",
+  "description": "Система управления сервисными заявками для кофемашин",
+  "requestFramePermissions": []
+}

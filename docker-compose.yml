@@ -1,0 +1,60 @@
+# =============================================================================
+# Docker Compose for Cheboko — Timeweb Cloud Deploy
+# =============================================================================
+# Usage:
+#   docker-compose up -d --build
+#   docker-compose logs -f
+#   docker-compose down
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ---------- PostgreSQL ----------
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cheboko}
+      POSTGRES_USER: ${POSTGRES_USER:-cheboko_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_strong_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cheboko_user} -d ${POSTGRES_DB:-cheboko}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------- FastAPI Backend ----------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-cheboko_user}:${POSTGRES_PASSWORD:-changeme_strong_password}@db:5432/${POSTGRES_DB:-cheboko}
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_change_me}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    ports:
+      - "8000:8000"
+
+  # ---------- Nginx Frontend ----------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  pgdata:
+    driver: local
