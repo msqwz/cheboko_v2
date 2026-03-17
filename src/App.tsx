@@ -20,6 +20,7 @@ const Statistics = lazy(() => import('./pages/Statistics').then(m => ({ default:
 const MapPage = lazy(() => import('./pages/MapPage').then(m => ({ default: m.MapPage })));
 const InviteManagement = lazy(() => import('./pages/InviteManagement').then(m => ({ default: m.InviteManagement })));
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const MaintenancePage = lazy(() => import('./pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
 
 // Loading fallback
 const PageLoader = () => (
@@ -55,6 +56,7 @@ export default function App() {
               <Route path="/employees" element={<Employees />} />
               <Route path="/statistics" element={<Statistics />} />
               <Route path="/map" element={<MapPage />} />
+              <Route path="/maintenance" element={<MaintenancePage />} />
               <Route path="/invites" element={<InviteManagement />} />
               <Route path="/profile" element={<Profile />} />
             </Route>

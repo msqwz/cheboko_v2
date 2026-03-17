@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store/AppContext';
 import { ROLE_LABELS } from '../../utils';
 import { Logo } from '../Logo';
-import { LayoutDashboard, Ticket, PlusCircle, Settings, LogOut, X, Users, MapPin, BarChart3, Briefcase, Server, Link2, Wifi, WifiOff, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Ticket, PlusCircle, Settings, LogOut, X, Users, MapPin, BarChart3, Briefcase, Server, Link2, Wifi, WifiOff, UserCircle, Wrench } from 'lucide-react';
 
 interface SidebarProps {
   onClose?: () => void;
@@ -38,6 +38,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   }
   if (currentPerms.includes('view_map')) {
     navItems.push({ to: '/map', label: 'Карта', icon: MapPin });
+  }
+  if (currentPerms.includes('view_maintenance')) {
+    navItems.push({ to: '/maintenance', label: 'Т/О', icon: Wrench });
   }
   if (currentPerms.includes('view_clients')) {
     navItems.push({ to: '/clients', label: 'Клиенты', icon: Briefcase });

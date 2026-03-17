@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, Ticket, Equipment, TicketStatus, Priority, Role, Location, RolePermissions, Permission, Invite, OfflineReport } from '../types';
+import { User, Ticket, Equipment, TicketStatus, Priority, Role, Location, RolePermissions, Permission, Invite, OfflineReport, MaintenanceRecord } from '../types';
 import { createToken, saveToken, getSavedAuth, removeToken, generateInviteToken } from '../lib/auth';
 import { cacheTickets, getCachedTickets, saveOfflineReport, getUnsyncedReports, markReportSynced, isOnline, registerServiceWorker } from '../lib/offlineStore';
 
@@ -10,6 +10,7 @@ interface AppState {
   equipments: Equipment[];
   locations: Location[];
   invites: Invite[];
+  maintenanceRecords: MaintenanceRecord[];
   rolePermissions: RolePermissions;
   online: boolean;
   setCurrentUser: (user: User | null) => void;
@@ -48,13 +49,13 @@ const MOCK_LOCATIONS: Location[] = [
 ];
 
 const DEFAULT_PERMISSIONS: RolePermissions = {
-  admin: ['view_dashboard', 'view_tickets', 'create_ticket', 'edit_ticket', 'delete_ticket', 'view_equipment', 'manage_equipment', 'view_clients', 'manage_clients', 'view_employees', 'manage_employees', 'view_statistics', 'manage_settings', 'view_map', 'manage_invites'],
-  network_manager: ['view_dashboard', 'view_tickets', 'create_ticket', 'edit_ticket', 'view_equipment', 'manage_equipment', 'view_clients', 'manage_clients', 'view_employees', 'manage_employees', 'view_statistics', 'manage_settings', 'view_map'],
-  region_manager: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_clients', 'view_employees', 'view_statistics', 'view_map', 'manage_invites'],
-  operator: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_clients', 'view_map', 'view_statistics'],
-  engineer: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_map', 'view_statistics'],
-  location_manager: ['view_dashboard', 'view_tickets', 'create_ticket', 'view_equipment', 'view_statistics'],
-  specialist: ['view_dashboard', 'view_tickets', 'create_ticket', 'view_equipment'],
+  admin: ['view_dashboard', 'view_tickets', 'create_ticket', 'edit_ticket', 'delete_ticket', 'view_equipment', 'manage_equipment', 'view_clients', 'manage_clients', 'view_employees', 'manage_employees', 'view_statistics', 'manage_settings', 'view_map', 'manage_invites', 'view_maintenance'],
+  network_manager: ['view_dashboard', 'view_tickets', 'create_ticket', 'edit_ticket', 'view_equipment', 'manage_equipment', 'view_clients', 'manage_clients', 'view_employees', 'manage_employees', 'view_statistics', 'manage_settings', 'view_map', 'view_maintenance'],
+  region_manager: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_clients', 'view_employees', 'view_statistics', 'view_map', 'manage_invites', 'view_maintenance'],
+  operator: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_clients', 'view_map', 'view_statistics', 'view_maintenance'],
+  engineer: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_map', 'view_statistics', 'view_maintenance'],
+  location_manager: ['view_dashboard', 'view_tickets', 'create_ticket', 'view_equipment', 'view_statistics', 'view_maintenance'],
+  specialist: ['view_dashboard', 'view_tickets', 'create_ticket', 'view_equipment', 'view_maintenance'],
 };
 
 const MOCK_EQUIPMENTS: Equipment[] = [
@@ -98,6 +99,53 @@ const MOCK_TICKETS: Ticket[] = [
   }
 ];
 
+const MOCK_MAINTENANCE_RECORDS: MaintenanceRecord[] = [
+  {
+    id: 'm1',
+    equipmentId: 'eq1',
+    equipmentDetails: MOCK_EQUIPMENTS[0],
+    clientName: 'ООО КофеКорп',
+    locationName: 'Кофейня на Ленина',
+    address: 'ул. Ленина, 10',
+    description: 'Замена прокладок группы, чистка бойлера, проверка клапанов, замена фильтра',
+    completedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+    drinksCount: 1250,
+    cleaningCount: 45,
+    status: 'completed',
+    performedBy: 'eng1',
+    createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
+  },
+  {
+    id: 'm2',
+    equipmentId: 'eq2',
+    equipmentDetails: MOCK_EQUIPMENTS[1],
+    clientName: 'ООО КофеКорп',
+    locationName: 'Кофейня на Пушкина',
+    address: 'ул. Пушкина, 15',
+    description: 'Декальцинация, замена сальников, регулировка давления помпы',
+    completedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+    drinksCount: 890,
+    cleaningCount: 32,
+    status: 'completed',
+    performedBy: 'eng2',
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+  },
+  {
+    id: 'm3',
+    equipmentId: 'eq1',
+    equipmentDetails: MOCK_EQUIPMENTS[0],
+    clientName: 'ООО КофеКорп',
+    locationName: 'Кофейня на Ленина',
+    address: 'ул. Ленина, 10',
+    description: 'Плановое ТО: замена уплотнителей, чистка заварочной группы, проверка электроники',
+    completedAt: new Date(Date.now() + 86400000 * 5).toISOString(),
+    drinksCount: 1450,
+    cleaningCount: 52,
+    status: 'recommended',
+    createdAt: new Date().toISOString(),
+  },
+];
+
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -108,6 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [locations, setLocations] = useState<Location[]>(MOCK_LOCATIONS);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions>(DEFAULT_PERMISSIONS);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>(MOCK_MAINTENANCE_RECORDS);
   const [online, setOnline] = useState<boolean>(navigator.onLine);
 
   // Register SW on mount

@@ -56,7 +56,8 @@ export type Permission =
   | 'view_statistics'
   | 'manage_settings'
   | 'view_map'
-  | 'manage_invites';
+  | 'manage_invites'
+  | 'view_maintenance';
 
 export type RolePermissions = Record<Role, Permission[]>;
 
@@ -127,4 +128,22 @@ export interface OfflineReport {
   parts: { name: string; quantity: number }[];
   createdAt: string;
   synced: boolean;
+}
+
+export type MaintenanceStatus = 'completed' | 'recommended';
+
+export interface MaintenanceRecord {
+  id: string;
+  equipmentId: string;
+  equipmentDetails: Equipment;
+  clientName: string;
+  locationName: string;
+  address: string;
+  description: string;
+  completedAt: string;
+  drinksCount: number;
+  cleaningCount: number;
+  status: MaintenanceStatus;
+  performedBy?: string;
+  createdAt: string;
 }
