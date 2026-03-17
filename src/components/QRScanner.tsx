@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
-import { X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
+import { X, CheckCircle, AlertCircle, Camera } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 
@@ -12,89 +12,104 @@ interface QRScannerProps {
 
 export const QRScanner: React.FC<QRScannerProps> = ({ isOpen, onClose, onScan }) => {
   const [scanError, setScanError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [cameraPermission, setCameraPermission] = useState<boolean>(true);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const containerId = 'qr-reader-element';
 
-  const cleanupScanner = () => {
+  useEffect(() => {
+    if (isOpen) {
+      setScanError(null);
+      setCameraPermission(true);
+      
+      // Создаем сканер
+      scannerRef.current = new Html5Qrcode(containerId);
+
+      // Запускаем камеру
+      const startScanner = async () => {
+        try {
+          const cameras = await Html5Qrcode.getCameras();
+          if (cameras && cameras.length > 0) {
+            // Используем заднюю камеру
+            const backCamera = cameras.find(cam => 
+              cam.label.toLowerCase().includes('back') || 
+              cam.label.toLowerCase().includes('environment')
+            ) || cameras[0];
+
+            await scannerRef.current?.start(
+              backCamera.id,
+              {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+              },
+              onScanSuccess,
+              onScanError
+            );
+          } else {
+            setScanError('Камера не найдена');
+            setCameraPermission(false);
+          }
+        } catch (err) {
+          console.error('Camera error:', err);
+          setScanError('Ошибка доступа к камере. Проверьте разрешения.');
+          setCameraPermission(false);
+        }
+      };
+
+      startScanner();
+    }
+
+    // Очистка при закрытии
+    return () => {
+      stopScanner();
+    };
+  }, [isOpen]);
+
+  const onScanSuccess = (decodedText: string) => {
+    try {
+      const url = new URL(decodedText);
+      const equipmentId = url.searchParams.get('id');
+      
+      if (equipmentId) {
+        onScan(equipmentId);
+        stopScanner();
+        onClose();
+      } else {
+        onScan(decodedText);
+        stopScanner();
+        onClose();
+      }
+    } catch {
+      onScan(decodedText);
+      stopScanner();
+      onClose();
+    }
+  };
+
+  const onScanError = (error: string) => {
+    // Игнорируем NotFoundException - это нормально
+    if (error.includes('NotFoundException')) {
+      return;
+    }
+    console.log('Scan error:', error);
+  };
+
+  const stopScanner = async () => {
     if (scannerRef.current) {
       try {
-        const clearResult = scannerRef.current.clear();
-        if (clearResult && typeof clearResult.then === 'function') {
-          clearResult.catch((err: Error) => console.log('Scanner clear error:', err));
-        }
-      } catch (e) {
-        console.log('Scanner cleanup error:', e);
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch (err) {
+        console.log('Scanner stop error:', err);
       }
       scannerRef.current = null;
     }
     setScanError(null);
   };
 
-  useEffect(() => {
-    if (isOpen && containerRef.current) {
-      setScanError(null);
-
-      // Создаем сканер
-      scannerRef.current = new Html5QrcodeScanner(
-        'qr-reader',
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          disableFlip: false,
-        },
-        /* verbose= */ false
-      );
-
-      // Обработка успешного сканирования
-      const onScanSuccess = (decodedText: string) => {
-        try {
-          // Пытаемся распарсить как URL
-          const url = new URL(decodedText);
-          const equipmentId = url.searchParams.get('id');
-
-          if (equipmentId) {
-            onScan(equipmentId);
-            cleanupScanner();
-          } else {
-            // Если это просто ID оборудования
-            onScan(decodedText);
-            cleanupScanner();
-          }
-        } catch {
-          // Если это не URL, передаем как есть
-          onScan(decodedText);
-          cleanupScanner();
-        }
-      };
-
-      // Обработка ошибок сканирования
-      const onScanError = (error: string) => {
-        // Игнорируем большинство ошибок - это нормально при сканировании
-        if (error.includes('NotFoundException')) {
-          return;
-        }
-        setScanError('Не удалось распознать QR-код. Попробуйте еще раз.');
-      };
-
-      // Запускаем сканер
-      scannerRef.current
-        .render(onScanSuccess, onScanError)
-        .catch((err) => {
-          setScanError('Ошибка доступа к камере. Проверьте разрешения.');
-          console.error('QR Scanner Error:', err);
-        });
-    }
-
-    // Очистка при закрытии
-    return () => {
-      cleanupScanner();
-    };
-  }, [isOpen, onScan]);
-
   const handleClose = () => {
-    cleanupScanner();
-    onClose();
+    stopScanner().then(() => {
+      onClose();
+    });
   };
 
   return (
@@ -106,12 +121,21 @@ export const QRScanner: React.FC<QRScannerProps> = ({ isOpen, onClose, onScan })
     >
       <div className="space-y-4">
         {/* Контейнер для сканера */}
-        <div 
-          ref={containerRef}
-          id="qr-reader" 
-          className="w-full flex justify-center"
-          style={{ minHeight: '350px' }}
-        />
+        {!cameraPermission ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Camera className="h-16 w-16 text-gray-300 mb-4" />
+            <p className="text-gray-500 text-center">
+              Нет доступа к камере.<br/>
+              Проверьте разрешения в настройках браузера.
+            </p>
+          </div>
+        ) : (
+          <div
+            id={containerId}
+            className="w-full flex justify-center"
+            style={{ minHeight: '350px' }}
+          />
+        )}
 
         {/* Сообщение об ошибке */}
         {scanError && (
