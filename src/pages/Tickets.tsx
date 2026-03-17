@@ -136,25 +136,25 @@ export const Tickets = () => {
         <div className="sm:flex sm:items-center sm:justify-between">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Заявки</h2>
           <div className="mt-3 sm:mt-0 sm:ml-4 flex flex-wrap gap-2">
-            <div className="relative rounded-md shadow-sm w-full sm:w-64">
+            <div className="relative flex-1 min-w-0">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="h-4 w-4 text-gray-400" />
               </div>
               <Input
                 type="text"
                 placeholder="Поиск..."
-                className="pl-10"
+                className="pl-10 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-              <Filter className="mr-2 h-4 w-4 text-gray-400" />
-              <span className="hidden sm:inline">Фильтры</span>
+            <Button variant="outline" onClick={() => setShowFilters(!showFilters)} size="sm">
+              <Filter className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Фильтры</span>
             </Button>
-            <Button variant="outline" onClick={handleExportCSV} className="hidden sm:flex">
-              <Download className="mr-2 h-4 w-4 text-gray-400" />
-              Экспорт
+            <Button variant="outline" onClick={handleExportCSV} className="hidden sm:flex" size="sm">
+              <Download className="h-4 w-4" />
+              <span className="ml-2">Экспорт</span>
             </Button>
           </div>
         </div>

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../store/AppContext';
-import { Settings as SettingsIcon, Shield } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, CheckCircle } from 'lucide-react';
 import { Role, Permission } from '../types';
 import { ROLE_LABELS } from '../utils';
 import { FadeIn } from '../components/AnimatedComponents';
+import { Button } from '../components/ui/Button';
 
 const AVAILABLE_PERMISSIONS: { id: Permission; label: string }[] = [
   { id: 'view_dashboard', label: 'Просмотр дашборда' },
@@ -21,11 +22,14 @@ const AVAILABLE_PERMISSIONS: { id: Permission; label: string }[] = [
   { id: 'manage_settings', label: 'Управление настройками' },
   { id: 'view_map', label: 'Просмотр карты' },
   { id: 'manage_invites', label: 'Управление приглашениями' },
+  { id: 'view_maintenance', label: 'Просмотр ТО' },
+  { id: 'scan_qr', label: 'Сканирование QR' },
 ];
 
 export const Settings = () => {
   const { currentUser, rolePermissions, updateRolePermissions } = useAppContext();
   const [selectedRole, setSelectedRole] = useState<Role>('specialist');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const currentPerms = currentUser ? rolePermissions[currentUser.role] || [] : [];
 
@@ -40,6 +44,12 @@ export const Settings = () => {
       : [...currentPerms, permission];
 
     updateRolePermissions(selectedRole, newPerms);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSavePermissions = () => {
+    // В реальном приложении здесь была бы отправка на сервер
+    setHasUnsavedChanges(false);
   };
 
   return (
@@ -97,6 +107,17 @@ export const Settings = () => {
               <p className="mt-4 text-sm text-amber-600">
                 * Права администратора не могут быть изменены.
               </p>
+            )}
+            {hasUnsavedChanges && selectedRole !== 'admin' && (
+              <div className="mt-6 flex items-center justify-between pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-500">
+                  Есть несохранённые изменения
+                </p>
+                <Button onClick={handleSavePermissions} size="sm">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Сохранить изменения
+                </Button>
+              </div>
             )}
           </div>
         </div>

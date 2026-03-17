@@ -124,14 +124,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             <p className="text-sm font-medium text-gray-700 truncate">{currentUser.name}</p>
             <p className="text-xs text-gray-500">{ROLE_LABELS[currentUser.role]}</p>
           </div>
-          <UserCircle className="ml-auto h-4 w-4 text-gray-400 shrink-0" />
         </NavLink>
 
-        {/* QR Scan Button */}
+        {/* QR Scan Button - Mobile only */}
         {currentPerms.includes('scan_qr') && (
           <button
             onClick={() => setIsScannerOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm"
+            className="flex sm:hidden w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm"
           >
             <QrCode className="h-4 w-4" />
             Сканировать QR

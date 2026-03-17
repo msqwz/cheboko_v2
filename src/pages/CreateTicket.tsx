@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../store/AppContext';
-import { QrCode, Camera, Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import { QrCode, Camera, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { AudioRecorder } from '../components/AudioRecorder';
 import { QRScanner } from '../components/QRScanner';
+import { cn } from '../utils';
 
 const SYMPTOMS = [
   'Не греет воду',
@@ -237,26 +237,17 @@ export const CreateTicket = () => {
                 key={opt.value}
                 type="button"
                 onClick={() => setPriority(opt.value as 'low' | 'medium' | 'high')}
-                className={
-                  `px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
-                    priority === opt.value
-                      ? opt.color.replace('100', '600').replace('800', '600') + ' text-white'
-                      : 'bg-white ' + opt.color
-                  }`
-                }
+                className={cn(
+                  "px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border",
+                  priority === opt.value
+                    ? opt.color.replace('100', '600').replace('800', 'white').replace('border-200', '600')
+                    : 'bg-white ' + opt.color
+                )}
               >
                 {opt.label}
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Voice input */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Голосовое описание
-          </label>
-          <AudioRecorder onTranscript={(text) => setDescription(text)} />
         </div>
 
         {/* Submit */}
