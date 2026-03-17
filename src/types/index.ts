@@ -57,7 +57,8 @@ export type Permission =
   | 'manage_settings'
   | 'view_map'
   | 'manage_invites'
-  | 'view_maintenance';
+  | 'view_maintenance'
+  | 'scan_qr';
 
 export type RolePermissions = Record<Role, Permission[]>;
 

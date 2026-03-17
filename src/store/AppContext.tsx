@@ -49,13 +49,13 @@ const MOCK_LOCATIONS: Location[] = [
 ];
 
 const DEFAULT_PERMISSIONS: RolePermissions = {
-  admin: ['view_dashboard', 'view_tickets', 'create_ticket', 'edit_ticket', 'delete_ticket', 'view_equipment', 'manage_equipment', 'view_clients', 'manage_clients', 'view_employees', 'manage_employees', 'view_statistics', 'manage_settings', 'view_map', 'manage_invites', 'view_maintenance'],
-  network_manager: ['view_dashboard', 'view_tickets', 'create_ticket', 'edit_ticket', 'view_equipment', 'manage_equipment', 'view_clients', 'manage_clients', 'view_employees', 'manage_employees', 'view_statistics', 'manage_settings', 'view_map', 'view_maintenance'],
-  region_manager: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_clients', 'view_employees', 'view_statistics', 'view_map', 'manage_invites', 'view_maintenance'],
-  operator: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_clients', 'view_map', 'view_statistics', 'view_maintenance'],
-  engineer: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_map', 'view_statistics', 'view_maintenance'],
-  location_manager: ['view_dashboard', 'view_tickets', 'create_ticket', 'view_equipment', 'view_statistics', 'view_maintenance'],
-  specialist: ['view_dashboard', 'view_tickets', 'create_ticket', 'view_equipment', 'view_maintenance'],
+  admin: ['view_dashboard', 'view_tickets', 'create_ticket', 'edit_ticket', 'delete_ticket', 'view_equipment', 'manage_equipment', 'view_clients', 'manage_clients', 'view_employees', 'manage_employees', 'view_statistics', 'manage_settings', 'view_map', 'manage_invites', 'view_maintenance', 'scan_qr'],
+  network_manager: ['view_dashboard', 'view_tickets', 'create_ticket', 'edit_ticket', 'view_equipment', 'manage_equipment', 'view_clients', 'manage_clients', 'view_employees', 'manage_employees', 'view_statistics', 'manage_settings', 'view_map', 'view_maintenance', 'scan_qr'],
+  region_manager: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_clients', 'view_employees', 'view_statistics', 'view_map', 'manage_invites', 'view_maintenance', 'scan_qr'],
+  operator: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_clients', 'view_map', 'view_statistics', 'view_maintenance', 'scan_qr'],
+  engineer: ['view_dashboard', 'view_tickets', 'edit_ticket', 'view_equipment', 'view_map', 'view_statistics', 'view_maintenance', 'scan_qr'],
+  location_manager: ['view_dashboard', 'view_tickets', 'create_ticket', 'view_equipment', 'view_statistics', 'view_maintenance', 'scan_qr'],
+  specialist: ['view_dashboard', 'view_tickets', 'create_ticket', 'view_equipment', 'view_maintenance', 'scan_qr'],
 };
 
 const MOCK_EQUIPMENTS: Equipment[] = [
