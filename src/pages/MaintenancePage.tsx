@@ -30,12 +30,12 @@ export const MaintenancePage = () => {
 
   // Filter records
   const filteredRecords = useMemo(() => {
-    let result = maintenanceRecords;
-    
+    let result = maintenanceRecords || [];
+
     if (statusFilter) {
       result = result.filter(r => r.status === statusFilter);
     }
-    
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(r =>
@@ -46,14 +46,14 @@ export const MaintenancePage = () => {
         r.description.toLowerCase().includes(query)
       );
     }
-    
-    return result.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+
+    return [...result].sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
   }, [maintenanceRecords, statusFilter, searchQuery]);
 
   const stats = useMemo(() => ({
-    total: maintenanceRecords.length,
-    completed: maintenanceRecords.filter(r => r.status === 'completed').length,
-    recommended: maintenanceRecords.filter(r => r.status === 'recommended').length,
+    total: (maintenanceRecords || []).length,
+    completed: (maintenanceRecords || []).filter(r => r.status === 'completed').length,
+    recommended: (maintenanceRecords || []).filter(r => r.status === 'recommended').length,
   }), [maintenanceRecords]);
 
   const getEngineerName = (engineerId?: string) => {
