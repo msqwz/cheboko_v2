@@ -15,10 +15,25 @@ export const QRScanner: React.FC<QRScannerProps> = ({ isOpen, onClose, onScan })
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const cleanupScanner = () => {
+    if (scannerRef.current) {
+      try {
+        const clearResult = scannerRef.current.clear();
+        if (clearResult && typeof clearResult.then === 'function') {
+          clearResult.catch((err: Error) => console.log('Scanner clear error:', err));
+        }
+      } catch (e) {
+        console.log('Scanner cleanup error:', e);
+      }
+      scannerRef.current = null;
+    }
+    setScanError(null);
+  };
+
   useEffect(() => {
     if (isOpen && containerRef.current) {
       setScanError(null);
-      
+
       // Создаем сканер
       scannerRef.current = new Html5QrcodeScanner(
         'qr-reader',
@@ -37,19 +52,19 @@ export const QRScanner: React.FC<QRScannerProps> = ({ isOpen, onClose, onScan })
           // Пытаемся распарсить как URL
           const url = new URL(decodedText);
           const equipmentId = url.searchParams.get('id');
-          
+
           if (equipmentId) {
             onScan(equipmentId);
-            scannerRef.current?.clear();
+            cleanupScanner();
           } else {
             // Если это просто ID оборудования
             onScan(decodedText);
-            scannerRef.current?.clear();
+            cleanupScanner();
           }
         } catch {
           // Если это не URL, передаем как есть
           onScan(decodedText);
-          scannerRef.current?.clear();
+          cleanupScanner();
         }
       };
 
@@ -73,19 +88,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({ isOpen, onClose, onScan })
 
     // Очистка при закрытии
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(console.error);
-        scannerRef.current = null;
-      }
+      cleanupScanner();
     };
   }, [isOpen, onScan]);
 
   const handleClose = () => {
-    if (scannerRef.current) {
-      scannerRef.current.clear().catch(console.error);
-      scannerRef.current = null;
-    }
-    setScanError(null);
+    cleanupScanner();
     onClose();
   };
 
