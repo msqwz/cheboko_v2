@@ -51,6 +51,10 @@ class TicketReport(BaseModel):
     resolution: str
     parts: list[dict] = []
 
+class OperatorCloseCancel(BaseModel):
+    action: str  # "closed" or "canceled"
+    reason: str
+
 class CommentCreate(BaseModel):
     text: str
 

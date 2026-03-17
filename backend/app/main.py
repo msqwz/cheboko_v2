@@ -12,7 +12,7 @@ from .auth import hash_password, verify_password, create_access_token, get_curre
 from .schemas import (
     RegisterRequest, LoginRequest, TokenResponse, UserOut, InviteRegisterRequest,
     TicketCreate, TicketStatusUpdate, AssignEngineer, TicketReport, CommentCreate,
-    InviteCreate, InviteOut, EquipmentCreate, LocationCreate,
+    InviteCreate, InviteOut, EquipmentCreate, LocationCreate, OperatorCloseCancel,
 )
 
 app = FastAPI(title="Cheboko API", version="2.0.0")
@@ -225,6 +225,45 @@ async def add_comment(
     await db.commit()
     await db.refresh(comment)
     return comment
+
+@app.patch("/api/tickets/{ticket_id}/operator-action")
+async def operator_close_cancel(
+    ticket_id: str, data: OperatorCloseCancel,
+    current_user: User = Depends(require_roles("operator")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Operator can close or cancel a ticket before an engineer is assigned.
+    The action is recorded in ticket history with the operator's name, timestamp and reason."""
+    if data.action not in ("closed", "canceled"):
+        raise HTTPException(400, "Action must be 'closed' or 'canceled'")
+    if not data.reason or not data.reason.strip():
+        raise HTTPException(400, "Reason is required")
+
+    result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
+    ticket = result.scalar_one_or_none()
+    if not ticket:
+        raise HTTPException(404, "Ticket not found")
+
+    # Only allow before engineer is assigned (statuses: created, opened)
+    if ticket.status not in (TicketStatusEnum.created, TicketStatusEnum.opened):
+        raise HTTPException(400, "Ticket can only be closed/canceled before an engineer is assigned")
+    if ticket.assigned_to is not None:
+        raise HTTPException(400, "Cannot close/cancel a ticket that already has an engineer assigned")
+
+    new_status = TicketStatusEnum(data.action)
+    ticket.status = new_status
+    ticket.updated_at = datetime.now(timezone.utc)
+
+    note = f"{data.action == 'closed' and 'Закрыта' or 'Отменена'} оператором {current_user.name}. Причина: {data.reason.strip()}"
+    history = TicketHistory(
+        ticket_id=ticket_id,
+        status=new_status,
+        user_id=current_user.id,
+        note=note,
+    )
+    db.add(history)
+    await db.commit()
+    return {"ok": True}
 
 # ─── INVITES ────────────────────────────────────────────
 @app.get("/api/invites")

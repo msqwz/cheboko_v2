@@ -14,7 +14,7 @@ const STEPS = [
   { id: 'assigned', label: 'Назначена', statuses: ['assigned'] },
   { id: 'enroute', label: 'В пути', statuses: ['enroute'] },
   { id: 'in_work', label: 'В работе', statuses: ['in_work', 'on_hold'] },
-  { id: 'completed', label: 'Завершена', statuses: ['completed', 'canceled'] },
+  { id: 'completed', label: 'Завершена', statuses: ['completed', 'canceled', 'closed'] },
 ];
 
 export const TicketProgressBar: React.FC<TicketProgressBarProps> = ({ status, className, compact = false }) => {
@@ -28,6 +28,8 @@ export const TicketProgressBar: React.FC<TicketProgressBarProps> = ({ status, cl
   }
 
   const isCanceled = status === 'canceled';
+  const isClosed = status === 'closed';
+  const isTerminalNegative = isCanceled;
 
   return (
     <div className={cn("w-full", compact ? "py-2" : "py-4", className)}>

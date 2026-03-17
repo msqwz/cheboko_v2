@@ -23,6 +23,7 @@ class TicketStatusEnum(str, enum.Enum):
     completed = "completed"
     on_hold = "on_hold"
     canceled = "canceled"
+    closed = "closed"
 
 class PriorityEnum(str, enum.Enum):
     high = "high"

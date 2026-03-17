@@ -15,7 +15,8 @@ export type TicketStatus =
   | 'in_work'
   | 'completed'
   | 'on_hold'
-  | 'canceled';
+  | 'canceled'
+  | 'closed';
 
 export type Priority = 'high' | 'medium' | 'low';
 

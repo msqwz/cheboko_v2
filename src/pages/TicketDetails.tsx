@@ -4,7 +4,7 @@ import { useAppContext } from '../store/AppContext';
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, ROLE_LABELS, cn, openNavigator } from '../utils';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { ArrowLeft, Clock, User, MapPin, Wrench, CheckCircle, Coffee, MessageSquare, Navigation, WifiOff } from 'lucide-react';
+import { ArrowLeft, Clock, User, MapPin, Wrench, CheckCircle, Coffee, MessageSquare, Navigation, WifiOff, XCircle, Lock } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { TicketProgressBar } from '../components/TicketProgressBar';
@@ -23,8 +23,10 @@ export const TicketDetails = () => {
   const [resolution, setResolution] = useState('');
   const [parts, setParts] = useState([{ name: '', quantity: 1 }]);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [closeReason, setCloseReason] = useState('');
 
   const ticket = tickets.find(t => t.id === id);
 
@@ -61,10 +63,22 @@ export const TicketDetails = () => {
   };
 
   const handleCancelConfirm = () => {
-    const reason = cancelReason.trim() || (currentUser.role === 'operator' ? `Отменена оператором ${currentUser.name}` : 'Отменена клиентом');
-    updateTicketStatus(ticket.id, 'canceled', reason);
+    if (currentUser.role === 'operator' && !cancelReason.trim()) return;
+    const reason = cancelReason.trim() || 'Отменена клиентом';
+    const note = currentUser.role === 'operator'
+      ? `Отменена оператором ${currentUser.name}. Причина: ${reason}`
+      : reason;
+    updateTicketStatus(ticket.id, 'canceled', note);
     setIsCancelModalOpen(false);
     setCancelReason('');
+  };
+
+  const handleCloseConfirm = () => {
+    if (!closeReason.trim()) return;
+    const note = `Закрыта оператором ${currentUser.name}. Причина: ${closeReason.trim()}`;
+    updateTicketStatus(ticket.id, 'closed', note);
+    setIsCloseModalOpen(false);
+    setCloseReason('');
   };
 
   const handleAddComment = () => {
@@ -126,9 +140,18 @@ export const TicketDetails = () => {
                 Навигатор
               </Button>
             )}
-            {/* Operator can cancel tickets in 'created' or 'opened' status */}
-            {currentUser.role === 'operator' && ['created', 'opened'].includes(ticket.status) && (
-              <Button variant="danger" onClick={() => setIsCancelModalOpen(true)}>Отменить заявку</Button>
+            {/* Operator can close or cancel tickets in 'created' or 'opened' status (before engineer assignment) */}
+            {currentUser.role === 'operator' && ['created', 'opened'].includes(ticket.status) && !ticket.assignedTo && (
+              <>
+                <Button variant="outline" onClick={() => setIsCloseModalOpen(true)}>
+                  <Lock className="h-4 w-4 mr-2" />
+                  Закрыть заявку
+                </Button>
+                <Button variant="danger" onClick={() => setIsCancelModalOpen(true)}>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Отменить заявку
+                </Button>
+              </>
             )}
             {(currentUser.role === 'location_manager' || currentUser.role === 'specialist') && !['completed', 'canceled'].includes(ticket.status) && (
               <Button variant="danger" onClick={() => setIsCancelModalOpen(true)}>Отменить заявку</Button>
@@ -356,16 +379,72 @@ export const TicketDetails = () => {
           </div>
         </div>
 
+        {/* Cancel Modal — operator must provide reason */}
         <Modal
           isOpen={isCancelModalOpen}
-          onClose={() => setIsCancelModalOpen(false)}
+          onClose={() => { setIsCancelModalOpen(false); setCancelReason(''); }}
           title="Отмена заявки"
-          description="Вы уверены, что хотите отменить эту заявку? Это действие нельзя будет отменить."
+          description={currentUser?.role === 'operator'
+            ? 'Укажите причину отмены заявки. Действие будет записано в историю заявки с указанием вашего ФИО и времени.'
+            : 'Вы уверены, что хотите отменить эту заявку? Это действие нельзя будет отменить.'
+          }
           confirmText="Да, отменить"
           cancelText="Оставить как есть"
           confirmVariant="danger"
           onConfirm={handleCancelConfirm}
-        />
+        >
+          {currentUser?.role === 'operator' && (
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Причина отмены <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
+                rows={3}
+                placeholder="Опишите причину отмены заявки..."
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+              />
+              {!cancelReason.trim() && (
+                <p className="mt-1 text-xs text-red-500">Обязательное поле</p>
+              )}
+              <p className="mt-2 text-xs text-gray-500">
+                Оператор: <strong>{currentUser.name}</strong>
+              </p>
+            </div>
+          )}
+        </Modal>
+
+        {/* Close Modal — operator closes ticket with reason */}
+        <Modal
+          isOpen={isCloseModalOpen}
+          onClose={() => { setIsCloseModalOpen(false); setCloseReason(''); }}
+          title="Закрытие заявки"
+          description="Укажите причину закрытия заявки. Действие будет записано в историю заявки с указанием вашего ФИО и времени."
+          confirmText="Закрыть заявку"
+          cancelText="Отмена"
+          confirmVariant="primary"
+          onConfirm={handleCloseConfirm}
+        >
+          <div className="mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Причина закрытия <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+              rows={3}
+              placeholder="Опишите причину закрытия заявки..."
+              value={closeReason}
+              onChange={e => setCloseReason(e.target.value)}
+            />
+            {!closeReason.trim() && (
+              <p className="mt-1 text-xs text-red-500">Обязательное поле</p>
+            )}
+            <p className="mt-2 text-xs text-gray-500">
+              Оператор: <strong>{currentUser?.name}</strong>
+            </p>
+          </div>
+        </Modal>
 
         <Modal
           isOpen={isCompleteModalOpen}
