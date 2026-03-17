@@ -90,22 +90,6 @@ export const EquipmentCard = () => {
           </div>
         </div>
 
-        {/* Location Info */}
-        {location && (
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4 text-white shadow-lg">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-white/20 rounded-xl">
-                <MapPin className="h-6 w-6" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold">{location.name}</p>
-                <p className="text-sm text-white/80 mt-1">{location.address}</p>
-                <p className="text-xs text-white/70 mt-1">{location.legalEntity}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">

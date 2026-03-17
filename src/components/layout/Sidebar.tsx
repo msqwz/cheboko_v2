@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store/AppContext';
 import { ROLE_LABELS } from '../../utils';
 import { Logo } from '../Logo';
-import { LayoutDashboard, Ticket, PlusCircle, Settings, LogOut, X, Users, MapPin, BarChart3, Briefcase, Server, Link2, Wifi, WifiOff, UserCircle, Wrench, QrCode } from 'lucide-react';
-import { QRScanner } from '../QRScanner';
+import { LayoutDashboard, Ticket, PlusCircle, Settings, LogOut, X, Users, MapPin, BarChart3, Briefcase, Server, Link2, Wifi, WifiOff, UserCircle, Wrench } from 'lucide-react';
 
 interface SidebarProps {
   onClose?: () => void;
@@ -13,18 +12,12 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { currentUser, logoutUser, rolePermissions, online } = useAppContext();
   const navigate = useNavigate();
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   if (!currentUser) return null;
 
   const handleLogout = () => {
     logoutUser();
     navigate('/');
-  };
-
-  const handleScanComplete = (equipmentId: string) => {
-    setIsScannerOpen(false);
-    navigate(`/equipment/${equipmentId}`);
   };
 
   const currentPerms = rolePermissions[currentUser.role] || [];
@@ -126,17 +119,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           </div>
         </NavLink>
 
-        {/* QR Scan Button - Mobile only */}
-        {currentPerms.includes('scan_qr') && (
-          <button
-            onClick={() => setIsScannerOpen(true)}
-            className="flex sm:hidden w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm"
-          >
-            <QrCode className="h-4 w-4" />
-            Сканировать QR
-          </button>
-        )}
-
         <button
           onClick={handleLogout}
           className="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors"
@@ -145,13 +127,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           Выйти
         </button>
       </div>
-
-      {/* QR Scanner Modal */}
-      <QRScanner
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onScan={handleScanComplete}
-      />
     </div>
   );
 };

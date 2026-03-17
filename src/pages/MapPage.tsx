@@ -193,8 +193,8 @@ export const MapPage = () => {
 
           {/* Yandex Map */}
           <div className="flex-1 w-full h-full relative min-h-[300px]">
-            <YMaps query={{ apikey: '', lang: 'ru_RU' }}>
-              <Map defaultState={{ center: [55.751574, 37.573856], zoom: 11 }} width="100%" height="100%" options={{ suppressMapOpenBlock: true }}>
+            <YMaps query={{ apikey: 'e1a186ee-6741-4e3f-b7f4-438ed8c61c4b', lang: 'ru_RU' }}>
+              <Map defaultState={{ center: [47.2357, 39.7015 ], zoom: 10 }} width="100%" height="100%" options={{ suppressMapOpenBlock: true }}>
                 {locationsWithTickets.map(({ loc, tickets: locTickets }) => {
                   const priority = getLocationPriority(locTickets);
                   const color = PRIORITY_MARKER_COLORS[priority];

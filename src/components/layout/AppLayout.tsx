@@ -1,19 +1,30 @@
 import React, { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAppContext } from '../../store/AppContext';
 import { OfflineIndicator } from '../OfflineIndicator';
-import { Menu } from 'lucide-react';
+import { Menu, QrCode } from 'lucide-react';
 import { Logo } from '../Logo';
 import { NotificationCenter } from '../NotificationCenter';
+import { QRScanner } from '../QRScanner';
 
 export const AppLayout = () => {
-  const { currentUser } = useAppContext();
+  const { currentUser, rolePermissions } = useAppContext();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   if (!currentUser) {
     return <Navigate to="/" replace />;
   }
+
+  const currentPerms = rolePermissions[currentUser.role] || [];
+  const canScanQR = currentPerms.includes('scan_qr');
+
+  const handleScanComplete = (equipmentId: string) => {
+    setIsQRScannerOpen(false);
+    navigate(`/equipment/${equipmentId}`);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -60,7 +71,25 @@ export const AppLayout = () => {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
         </main>
+
+        {/* Floating QR Scan Button - Mobile only */}
+        {canScanQR && (
+          <button
+            onClick={() => setIsQRScannerOpen(true)}
+            className="lg:hidden fixed bottom-6 right-6 p-4 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors z-40"
+            aria-label="Сканировать QR"
+          >
+            <QrCode className="h-6 w-6" />
+          </button>
+        )}
       </div>
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        isOpen={isQRScannerOpen}
+        onClose={() => setIsQRScannerOpen(false)}
+        onScan={handleScanComplete}
+      />
     </div>
   );
 };

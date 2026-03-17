@@ -99,9 +99,8 @@ export const CreateTicket = () => {
           </p>
         </div>
         {!selectedEquipment && (
-          <Button onClick={() => setIsScannerOpen(true)} size="sm">
-            <Camera className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Сканировать QR</span>
+          <Button onClick={() => setIsScannerOpen(true)} size="sm" className="sm:hidden">
+            <Camera className="h-4 w-4" />
           </Button>
         )}
       </div>
@@ -137,15 +136,15 @@ export const CreateTicket = () => {
         </div>
       )}
 
-      {/* Scanner Button (if not selected) */}
+      {/* Scanner Button (if not selected) - Mobile only */}
       {!selectedEquipment && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
+        <div className="sm:hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
           <QrCode className="h-16 w-16 text-indigo-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Сканируйте QR-код</h3>
           <p className="text-sm text-gray-500 mb-4">
             Наведите камеру на QR-код оборудования для автоматического заполнения
           </p>
-          <Button onClick={() => setIsScannerOpen(true)} size="lg" className="w-full sm:w-auto">
+          <Button onClick={() => setIsScannerOpen(true)} size="lg" className="w-full">
             <Camera className="h-5 w-5 mr-2" />
             Открыть сканер
           </Button>
