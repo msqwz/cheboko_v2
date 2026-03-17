@@ -14,7 +14,6 @@ export const STATUS_LABELS: Record<string, string> = {
   completed: 'Выполнена',
   on_hold: 'Приостановлена',
   canceled: 'Отменена',
-  closed: 'Закрыта',
 };
 
 export const STATUS_COLORS: Record<string, string> = {
@@ -26,7 +25,6 @@ export const STATUS_COLORS: Record<string, string> = {
   completed: 'bg-green-100 text-green-800',
   on_hold: 'bg-red-100 text-red-800',
   canceled: 'bg-gray-300 text-gray-800',
-  closed: 'bg-purple-100 text-purple-800',
 };
 
 export const PRIORITY_LABELS: Record<string, string> = {

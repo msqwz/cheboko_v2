@@ -76,7 +76,8 @@ export const TicketDetails = () => {
   const handleCloseConfirm = () => {
     if (!closeReason.trim()) return;
     const note = `Закрыта оператором ${currentUser.name}. Причина: ${closeReason.trim()}`;
-    updateTicketStatus(ticket.id, 'closed', note);
+    // Use 'completed' status instead of 'closed' when operator closes the ticket
+    updateTicketStatus(ticket.id, 'completed', note);
     setIsCloseModalOpen(false);
     setCloseReason('');
   };
@@ -420,7 +421,7 @@ export const TicketDetails = () => {
           isOpen={isCloseModalOpen}
           onClose={() => { setIsCloseModalOpen(false); setCloseReason(''); }}
           title="Закрытие заявки"
-          description="Укажите причину закрытия заявки. Действие будет записано в историю заявки с указанием вашего ФИО и времени."
+          description="Укажите причину закрытия заявки. Заявка получит статус «Выполнена». Действие будет записано в историю заявки с указанием вашего ФИО и времени."
           confirmText="Закрыть заявку"
           cancelText="Отмена"
           confirmVariant="primary"

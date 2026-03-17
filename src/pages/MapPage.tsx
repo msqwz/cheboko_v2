@@ -2,18 +2,14 @@ import React, { useState } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { YMaps, Map, Placemark } from '@pbe/react-yandex-maps';
 import { useNavigate } from 'react-router-dom';
-import { FadeIn, SwipeCard } from '../components/AnimatedComponents';
-import { Navigation, Filter, X, ChevronUp, ChevronDown, MapPin, ExternalLink } from 'lucide-react';
+import { FadeIn } from '../components/AnimatedComponents';
+import { Navigation, Filter, X, MapPin, ExternalLink, Wrench, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { STATUS_LABELS, PRIORITY_LABELS, PRIORITY_COLORS, STATUS_COLORS, cn, openNavigator } from '../utils';
+import { generateMarkerSvg, getEquipmentIcon, getLocationPriority, PRIORITY_MARKER_COLORS } from '../utils/mapMarkers';
 import { AnimatePresence, motion } from 'motion/react';
 import type { Ticket, Location as AppLocation } from '../types';
-
-// Priority → marker color map
-const PRIORITY_MARKER_COLORS: Record<string, string> = {
-  high: '#ef4444',
-  medium: '#f59e0b',
-  low: '#3b82f6',
-};
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
 export const MapPage = () => {
   const { currentUser, locations, tickets, users, rolePermissions } = useAppContext();
@@ -95,6 +91,15 @@ export const MapPage = () => {
   };
 
   const activeFilterCount = [statusFilter, priorityFilter, engineerFilter].filter(Boolean).length;
+
+  // Determine which tickets are "active" (not completed/canceled) for pulsing animation
+  const activeTicketIds = React.useMemo(() => {
+    return new Set(
+      tickets
+        .filter(t => !['completed', 'canceled'].includes(t.status))
+        .map(t => t.id)
+    );
+  }, [tickets]);
 
   return (
     <FadeIn>
@@ -193,20 +198,25 @@ export const MapPage = () => {
                 {locationsWithTickets.map(({ loc, tickets: locTickets }) => {
                   const priority = getLocationPriority(locTickets);
                   const color = PRIORITY_MARKER_COLORS[priority];
-                  const hasHigh = priority === 'high';
+                  // Pulsing for locations with active (non-completed) tickets
+                  const hasActiveTickets = locTickets.some(t => activeTicketIds.has(t.id));
+                  // Get the most common equipment type icon
+                  const equipmentType = locTickets[0]?.equipmentDetails.model || 'other';
+                  const iconSvg = getEquipmentIcon(equipmentType);
+                  const markerSvg = generateMarkerSvg(color, locTickets.length, iconSvg, hasActiveTickets);
+                  
                   return loc.lat && loc.lng && (
                     <Placemark
                       key={`loc-${loc.id}`}
                       geometry={[loc.lat, loc.lng]}
                       properties={{
-                        iconContent: String(locTickets.length),
-                        hintContent: `${loc.name} (${locTickets.length})`,
+                        hintContent: `${loc.name} (${locTickets.length} заявок)`,
                       }}
                       options={{
-                        iconLayout: 'default#imageWithContent',
-                        iconImageHref: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><circle cx="18" cy="18" r="16" fill="${color}" stroke="white" stroke-width="2"/>${hasHigh ? '<circle cx="18" cy="18" r="16" fill="none" stroke="' + color + '" stroke-width="3" opacity="0.4"><animate attributeName="r" from="16" to="24" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.4" to="0" dur="1.5s" repeatCount="indefinite"/></circle>' : ''}<text x="18" y="23" text-anchor="middle" fill="white" font-size="13" font-weight="bold" font-family="sans-serif">${locTickets.length}</text></svg>`)}`,
-                        iconImageSize: [36, 36],
-                        iconImageOffset: [-18, -18],
+                        iconLayout: 'default#image',
+                        iconImageHref: markerSvg,
+                        iconImageSize: [40, 40],
+                        iconImageOffset: [-20, -20],
                       }}
                       onClick={() => handleLocationClick(loc, locTickets)}
                     />
@@ -241,43 +251,82 @@ export const MapPage = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="absolute bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl border-t border-gray-200 max-h-[60vh] flex flex-col"
+              className="absolute bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl border-t border-gray-200 max-h-[70vh] flex flex-col"
             >
               {/* Handle */}
-              <div className="flex justify-center pt-2 pb-1">
-                <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
               </div>
 
               {/* Header */}
-              <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-100">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{selectedLocation.loc.name}</h3>
+              <div className="flex items-start justify-between px-4 pb-3 border-b border-gray-100">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900">{selectedLocation.loc.name}</h3>
                   <button
                     onClick={() => selectedLocation.loc.lat && selectedLocation.loc.lng && openNavigator(selectedLocation.loc.lat, selectedLocation.loc.lng)}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 mt-0.5"
+                    className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 mt-1 font-medium"
                   >
-                    <MapPin className="h-3 w-3" />
+                    <MapPin className="h-4 w-4" />
                     {selectedLocation.loc.address}
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </button>
+                  <p className="text-xs text-gray-500 mt-0.5">{selectedLocation.loc.legalEntity}</p>
                 </div>
                 <button
                   onClick={() => setSelectedLocation(null)}
-                  className="p-1.5 rounded-full hover:bg-gray-100"
+                  className="p-2 rounded-full hover:bg-gray-100 -mt-2 -mr-2"
                 >
                   <X className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
 
+              {/* Stats bar */}
+              <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span className="font-medium">Высокий:</span>
+                  <span className="text-gray-700">{selectedLocation.tickets.filter(t => t.priority === 'high').length}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <span className="font-medium">Средний:</span>
+                  <span className="text-gray-700">{selectedLocation.tickets.filter(t => t.priority === 'medium').length}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span className="font-medium">Низкий:</span>
+                  <span className="text-gray-700">{selectedLocation.tickets.filter(t => t.priority === 'low').length}</span>
+                </div>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-gray-400" />
+                  <span className="text-gray-600">Всего: {selectedLocation.tickets.length}</span>
+                </div>
+              </div>
+
               {/* Ticket list */}
-              <div className="overflow-y-auto flex-1 px-4 py-2 space-y-2">
+              <div className="overflow-y-auto flex-1 px-4 py-3 space-y-2.5">
                 {selectedLocation.tickets.map((ticket) => {
                   const assignee = ticket.assignedTo ? users.find(u => u.id === ticket.assignedTo) : null;
+                  const isActive = !['completed', 'canceled'].includes(ticket.status);
                   return (
-                    <div key={ticket.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-semibold text-gray-900">#{ticket.id}</span>
-                        <div className="flex items-center gap-1.5">
+                    <div 
+                      key={ticket.id} 
+                      className={cn(
+                        "rounded-xl p-3 border transition-all hover:shadow-md cursor-pointer",
+                        isActive ? "bg-white border-gray-200" : "bg-gray-50 border-gray-100 opacity-75"
+                      )}
+                      onClick={() => navigate(`/tickets/${ticket.id}`)}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-bold text-gray-900">#{ticket.id}</span>
+                          {isActive ? (
+                            <AlertCircle className="h-4 w-4 text-indigo-500 shrink-0" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
                           <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", STATUS_COLORS[ticket.status])}>
                             {STATUS_LABELS[ticket.status]}
                           </span>
@@ -286,21 +335,41 @@ export const MapPage = () => {
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-700">{ticket.equipmentDetails.model}</p>
-                      {assignee && <p className="text-xs text-gray-500 mt-0.5">Инженер: {assignee.name}</p>}
-                      <div className="flex gap-2 mt-2">
+                      
+                      <p className="text-sm font-medium text-gray-800 mb-1">{ticket.equipmentDetails.model}</p>
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-2">{ticket.description}</p>
+                      
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          {assignee && (
+                            <div className="flex items-center gap-1 text-gray-600">
+                              <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-xs">
+                                {assignee.name.charAt(0)}
+                              </div>
+                              <span className="truncate max-w-[100px]">{assignee.name}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1 text-gray-400">
+                            <Clock className="h-3.5 w-3.5" />
+                            <span className="text-xs">{format(new Date(ticket.createdAt), 'dd.MM.yy HH:mm', { locale: ru })}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Action buttons */}
+                      <div className="flex gap-2 mt-2.5 pt-2 border-t border-gray-100">
                         <button
-                          onClick={() => navigate(`/tickets/${ticket.id}`)}
-                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium text-center transition-colors"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/tickets/${ticket.id}`); }}
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-medium text-center transition-colors"
                         >
                           Детали
                         </button>
                         {selectedLocation.loc.lat && selectedLocation.loc.lng && (
                           <button
-                            onClick={() => openNavigator(selectedLocation.loc.lat!, selectedLocation.loc.lng!)}
-                            className="inline-flex items-center gap-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                            onClick={(e) => { e.stopPropagation(); openNavigator(selectedLocation.loc.lat!, selectedLocation.loc.lng!); }}
+                            className="inline-flex items-center justify-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
                           >
-                            <Navigation className="h-3 w-3" />
+                            <Navigation className="h-3.5 w-3.5" />
                             Навигатор
                           </button>
                         )}
